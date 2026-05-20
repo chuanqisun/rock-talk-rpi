@@ -6,6 +6,11 @@ export interface Rc522Result {
   text: string;
 }
 
+export interface Rc522UidResult {
+  uid: string;
+  size: number;
+}
+
 export interface Rc522Options {
   bus?: number;
   device?: number;
@@ -25,6 +30,7 @@ export interface Rc522OperationOptions {
 
 export default class Rc522 {
   constructor(options?: Rc522Options);
+  readUidAsync(options?: Rc522OperationOptions): Promise<Rc522UidResult>;
   readTextAsync(options?: Rc522OperationOptions): Promise<Rc522Result>;
   writeTextAsync(text: string, options?: Rc522OperationOptions): Promise<Rc522Result>;
   close(): void;

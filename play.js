@@ -1,5 +1,6 @@
 import { cancel, intro, isCancel, outro, select } from "@clack/prompts";
 import { execFile } from "node:child_process";
+import { readFile } from "node:fs/promises";
 import { dirname, resolve } from "node:path";
 import { setTimeout as delay } from "node:timers/promises";
 import { fileURLToPath } from "node:url";
@@ -10,18 +11,58 @@ import Rc522 from "./lib/rc522.js";
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const execFileAsync = promisify(execFile);
-const TEXT_START_PAGE = 4;
-const TEXT_PAGE_COUNT = 8;
-const TEXT_PAGES = Array.from({ length: TEXT_PAGE_COUNT }, (_, index) => TEXT_START_PAGE + index);
 const READER_POLL_INTERVAL_MS = 80;
-const reader = new Rc522({ blocks: TEXT_PAGES, pollIntervalMs: READER_POLL_INTERVAL_MS });
+const reader = new Rc522({ pollIntervalMs: READER_POLL_INTERVAL_MS });
 
-function createStartEvent(uid, data) {
-  return /** @type {{ type: "start", uid: string, data: string }} */ ({ type: "start", uid, data });
+function createStartEvent(uid, track) {
+  return /** @type {{ type: "start", uid: string, track: string }} */ ({ type: "start", uid, track });
 }
 
 function createStopEvent() {
   return /** @type {{ type: "stop" }} */ ({ type: "stop" });
+}
+
+async function loadTrackMap() {
+  const mapPath = resolve(__dirname, "map.json");
+  const raw = await readFile(mapPath, "utf8");
+  const entries = JSON.parse(raw);
+
+  if (!Array.isArray(entries)) {
+    throw new Error("map.json must contain an array of { id, track } entries.");
+  }
+
+  const exactMatches = new Map();
+  let fallbackTrack = "";
+
+  for (const entry of entries) {
+    if (!entry || typeof entry !== "object") {
+      throw new Error("Each map.json entry must be an object with id and track fields.");
+    }
+
+    const id = typeof entry.id === "string" ? entry.id.trim() : "";
+    const track = typeof entry.track === "string" ? entry.track.trim() : "";
+
+    if (!id || !track) {
+      throw new Error("Each map.json entry must provide non-empty id and track values.");
+    }
+
+    if (id === "*") {
+      fallbackTrack = track;
+      continue;
+    }
+
+    exactMatches.set(id, track);
+  }
+
+  if (!fallbackTrack) {
+    throw new Error("map.json must include a '*' fallback track.");
+  }
+
+  return {
+    resolveTrack(uid) {
+      return exactMatches.get(uid) ?? fallbackTrack;
+    },
+  };
 }
 
 function parseAlsaDevices(output) {
@@ -110,7 +151,7 @@ async function promptForAudioDevice() {
 async function* infiniteRead() {
   while (true) {
     try {
-      yield reader.readTextAsync();
+      yield reader.readUidAsync();
     } catch (error) {
       // The chip might be approaching or leaving the reader's field. It's not a fatal error
     }
@@ -138,16 +179,6 @@ const detach$ = from(rawInput$).pipe(
   tap((event) => console.log(`[detached] ${event.uid}.`))
 );
 
-const read$ = from(rawInput$).pipe(concatMap((result) => of({ type: "read", ...result })));
-
-const startPlay$ = read$.pipe(
-  withLatestFrom(state$),
-  filter(([_, state]) => state.state === "idle"),
-  tap(([event, _]) => state$.next({ uid: event.uid, state: "playing" })),
-  tap(([event, _]) => console.log(`[playing] ${event.uid}...`)),
-  map(([event]) => createStartEvent(event.uid, event.text))
-);
-
 const hopSwap$ = idChange$.pipe(
   withLatestFrom(state$),
   filter(([idChange, state]) => state.state === "playing" && state.uid !== idChange.uid),
@@ -165,13 +196,13 @@ const stopPlay$ = detach$.pipe(
 );
 
 /**
- * @param {{ type: "start", uid: string, data: string } | { type: "stop" }} event
+ * @param {{ type: "start", uid: string, track: string } | { type: "stop" }} event
  */
 async function handlePlaybackEvent(audioPlayer, event) {
   console.log(`[event] ${JSON.stringify(event)}`);
 
   if (event.type === "start") {
-    await audioPlayer.play(event.data);
+    await audioPlayer.play(event.track);
     return;
   }
 
@@ -179,6 +210,7 @@ async function handlePlaybackEvent(audioPlayer, event) {
 }
 
 async function main() {
+  const trackMap = await loadTrackMap();
   const requestedDevice = parseCliAudioDevice(process.argv.slice(2));
   const useInteractivePrompt = requestedDevice === null;
 
@@ -210,6 +242,16 @@ async function main() {
     reader.close();
     process.exit(0);
   });
+
+  const read$ = from(rawInput$).pipe(concatMap((result) => of({ type: "read", ...result })));
+
+  const startPlay$ = read$.pipe(
+    withLatestFrom(state$),
+    filter(([_, state]) => state.state === "idle"),
+    tap(([event, _]) => state$.next({ uid: event.uid, state: "playing" })),
+    tap(([event, _]) => console.log(`[playing] ${event.uid} -> ${trackMap.resolveTrack(event.uid)}.`)),
+    map(([event]) => createStartEvent(event.uid, trackMap.resolveTrack(event.uid)))
+  );
 
   merge(startPlay$, hopSwap$, stopPlay$)
     .pipe(concatMap((event) => from(handlePlaybackEvent(audioPlayer, event))))

@@ -14,6 +14,8 @@
 
 ## Programming the RFID chips
 
+Playback now uses the RFID chip UID, not the text written onto the tag. Update `map.json` to assign each UID to a track, and keep a `"*"` entry as the fallback track for any unmapped chip.
+
 Ask the project developer for ssh password. Connect to dock via USB-C port, then ssh onto the device.
 
 ```sh
@@ -23,7 +25,7 @@ sudo systemctl stop rocktalk.service
 node setup.js
 ```
 
-Follow the interactive prompt to pair audio tracks with the RFID chips. Use the setup program to test the assignment. After the setup, you will need to restart the service
+Follow the interactive prompt if you still want to inspect or write tag data. Playback does not use that stored text anymore. After any setup work, restart the service.
 
 ```sh
 sudo systemctl restart rocktalk.service
@@ -31,7 +33,7 @@ sudo systemctl restart rocktalk.service
 
 ## Using the dock
 
-The system will auto start the program on boot. Move the RFID chip into the sensor field. The assigned soundtrack will loop. The audio output will be piped into the first USB audio device detected by the system. It is ok to unplug and replug the USB audio device while the system is running.
+The system will auto start the program on boot. Move the RFID chip into the sensor field. If the chip UID exists in `map.json`, the mapped track will loop. If not, the `"*"` fallback track will loop. The audio output will be piped into the first USB audio device detected by the system. It is ok to unplug and replug the USB audio device while the system is running.
 
 ## Developer task: first-time setup of Raspberry Pi
 
