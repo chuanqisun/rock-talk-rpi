@@ -19,6 +19,7 @@ Ask the project developer for ssh password. Connect to dock via USB-C port, then
 ```sh
 ssh rocktalk@rocktalk.local
 cd ~/rocktalk-pi
+sudo systemctl stop rocktalk.service
 node setup.js
 ```
 
