@@ -9,12 +9,10 @@
 ## Add audio tracks
 
 - Use mp3 audio format
-- Keep the filename as short as possible. Long filenames adds fragility to RFID read/write process
 - Mount the MicroSD card to your laptop, copy paste mp3 files into the `/home/rocktalk/rocktalk-pi/tracks` folder.
+- Update `/home/rocktalk/rocktalk-pi/map.json` to map each track to a RFID chip UID.
 
-## Programming the RFID chips
-
-Playback now uses the RFID chip UID, not the text written onto the tag. Update `map.json` to assign each UID to a track, and keep a `"*"` entry as the fallback track for any unmapped chip.
+## Identify the RFID chip UIDs
 
 Ask the project developer for ssh password. Connect to dock via USB-C port, then ssh onto the device.
 
@@ -25,7 +23,7 @@ sudo systemctl stop rocktalk.service
 node setup.js
 ```
 
-Follow the interactive prompt if you still want to inspect or write tag data. Playback does not use that stored text anymore. After any setup work, restart the service.
+Follow the instructions to test each RFID chip and note down the UID. After testing, restart the service.
 
 ```sh
 sudo systemctl restart rocktalk.service
@@ -74,7 +72,7 @@ sudo reboot
 ### 3. Install packages
 
 ```sh
-sudo apt install mpg123
+sudo apt install mpg123 # for playing mp3 audio
 ```
 
 ### 4. Test hardware
@@ -111,7 +109,7 @@ npm init -y
 npm install spi-device rxjs @clack/prompts --no-save
 ```
 
-6. Register systemd service
+### 7. Auto startup
 
 This allows the app to auto-start on boot, without connecting to a computer
 
@@ -123,3 +121,7 @@ sudo systemctl daemon-reload
 sudo systemctl enable rocktalk.service
 sudo systemctl start rocktalk.service
 ```
+
+## Troubleshoot
+
+1. The device no longer auto-connects to WIFI. Run `sudo raspi-config` to set up WIFI again.
