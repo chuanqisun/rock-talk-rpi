@@ -6,6 +6,7 @@ import time
 
 import adafruit_pixelbuf
 import board
+from adafruit_led_animation.animation.rainbowchase import RainbowChase
 from adafruit_raspberry_pi5_neopixel_write import neopixel_write
 
 NEOPIXEL = board.D13
@@ -14,6 +15,7 @@ GREEN = (0, 0, 255)
 OFF = (0, 0, 0)
 SUPPORTED_MODES = {"idle", "playing"}
 FRAME_INTERVAL_SECONDS = 0.05
+STARTUP_ANIMATION_DURATION_SECONDS = 1.5
 
 class Pi5Pixelbuf(adafruit_pixelbuf.PixelBuf):
     def __init__(self, pin, size, **kwargs):
@@ -66,7 +68,7 @@ def render_mode(mode):
 
 
 def handle_command(command, current_mode):
-    global playback_state
+    global playback_state, startup_animation_state
     command_type = command.get("type")
 
     if command_type == "setMode":
@@ -79,6 +81,7 @@ def handle_command(command, current_mode):
             render_mode(mode)
 
         playback_state = None
+        startup_animation_state = None
 
         emit({"type": "ack", "command": "setMode", "mode": mode})
         return mode, False
@@ -98,6 +101,7 @@ def handle_command(command, current_mode):
             "intro_delay_ms": intro_delay_ms,
             "started_at": time.monotonic(),
         }
+        startup_animation_state = None
         fill_pixels(GREEN)
 
         emit({
@@ -108,8 +112,16 @@ def handle_command(command, current_mode):
         })
         return "playing", False
 
+    if command_type == "clear":
+        playback_state = None
+        startup_animation_state = None
+        clear_pixels()
+        emit({"type": "ack", "command": "clear"})
+        return "idle", False
+
     if command_type == "shutdown":
         playback_state = None
+        startup_animation_state = None
         clear_pixels()
         emit({"type": "ack", "command": "shutdown"})
         return current_mode, True
@@ -121,8 +133,10 @@ def handle_command(command, current_mode):
     raise ValueError(f"Unsupported command: {command_type}")
 
 pixels = Pi5Pixelbuf(NEOPIXEL, num_pixels, auto_write=True, byteorder="BGR")
+startup_animation = RainbowChase(pixels, speed=0.02, size=5, spacing=3)
 running = True
 playback_state = None
+startup_animation_state = {"started_at": time.monotonic()}
 
 
 def stop_worker(_signal_number, _frame):
@@ -153,6 +167,12 @@ try:
                     cycle_elapsed_ms = (elapsed_ms - playback_state["intro_delay_ms"]) % progress_duration_ms
 
                 render_progress(cycle_elapsed_ms, progress_duration_ms)
+        elif startup_animation_state is not None:
+            if time.monotonic() - startup_animation_state["started_at"] >= STARTUP_ANIMATION_DURATION_SECONDS:
+                startup_animation_state = None
+                clear_pixels()
+            else:
+                startup_animation.animate()
 
         ready_inputs, _, _ = select.select([sys.stdin], [], [], FRAME_INTERVAL_SECONDS)
 

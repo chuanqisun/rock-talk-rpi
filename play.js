@@ -248,15 +248,29 @@ async function main() {
     onPlaybackCycleStart: ({ durationMs }) => ledController.startPlaybackProgress({ durationMs, introDelayMs: 1000 }),
   });
   const ledController = new LedController();
+  let shuttingDown = false;
+
+  const shutdown = async () => {
+    if (shuttingDown) {
+      return;
+    }
+
+    shuttingDown = true;
+    console.log("\nExiting...");
+    audioPlayer.stop();
+    await ledController.close();
+    reader.close();
+    process.exit(0);
+  };
 
   void ledController.warmup();
 
   process.on("SIGINT", () => {
-    console.log("\nExiting...");
-    audioPlayer.stop();
-    void ledController.close();
-    reader.close();
-    process.exit(0);
+    void shutdown();
+  });
+
+  process.on("SIGTERM", () => {
+    void shutdown();
   });
 
   const read$ = from(rawInput$).pipe(concatMap((result) => of({ type: "read", ...result })));
