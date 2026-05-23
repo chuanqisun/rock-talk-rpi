@@ -122,6 +122,10 @@ sudo systemctl enable rocktalk.service
 sudo systemctl start rocktalk.service
 ```
 
+## NeoPixel setup
+
+- [Documentation](https://learn.adafruit.com/circuitpython-on-raspberrypi-linux/using-neopixels-on-the-pi-5)
+
 ## Troubleshoot
 
 1. The device no longer auto-connects to WIFI. Run `sudo raspi-config` to set up WIFI again.
