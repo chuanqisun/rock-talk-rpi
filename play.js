@@ -7,6 +7,7 @@ import { fileURLToPath } from "node:url";
 import { promisify } from "node:util";
 import { BehaviorSubject, concatMap, debounceTime, distinctUntilChanged, filter, from, map, merge, of, share, tap, withLatestFrom } from "rxjs";
 import AudioPlayer from "./lib/audio-player.js";
+import LedController from "./lib/led-controller.js";
 import Rc522 from "./lib/rc522.js";
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
@@ -198,15 +199,24 @@ const stopPlay$ = detach$.pipe(
 /**
  * @param {{ type: "start", uid: string, track: string } | { type: "stop" }} event
  */
-async function handlePlaybackEvent(audioPlayer, event) {
+async function handlePlaybackEvent(audioPlayer, ledController, event) {
   console.log(`[event] ${JSON.stringify(event)}`);
 
   if (event.type === "start") {
-    await audioPlayer.play(event.track);
+    const didStart = await audioPlayer.play(event.track);
+
+    if (didStart) {
+      await ledController.setMode("playing");
+      return;
+    }
+
+    state$.next({ uid: "", state: "idle" });
+    await ledController.setMode("idle");
     return;
   }
 
   audioPlayer.stop();
+  await ledController.setMode("idle");
 }
 
 async function main() {
@@ -235,10 +245,12 @@ async function main() {
     device: selectedDevice,
     loop: true,
   });
+  const ledController = new LedController();
 
   process.on("SIGINT", () => {
     console.log("\nExiting...");
     audioPlayer.stop();
+    void ledController.close();
     reader.close();
     process.exit(0);
   });
@@ -254,7 +266,7 @@ async function main() {
   );
 
   merge(startPlay$, hopSwap$, stopPlay$)
-    .pipe(concatMap((event) => from(handlePlaybackEvent(audioPlayer, event))))
+    .pipe(concatMap((event) => from(handlePlaybackEvent(audioPlayer, ledController, event))))
     .subscribe();
 
   if (useInteractivePrompt) {

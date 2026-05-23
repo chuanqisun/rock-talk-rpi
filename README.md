@@ -140,6 +140,8 @@ source env/bin/activate
 
 Follow this [documentation](https://learn.adafruit.com/circuitpython-on-raspberrypi-linux/using-neopixels-on-the-pi-5) to finish the setup
 
+The Node.js LED launcher will automatically use `env/bin/python3` when the project-level `env` virtual environment exists. If you need to override that, set `ROCKTALK_LED_PYTHON` to the interpreter you want.
+
 ## Troubleshoot
 
 1. The device no longer auto-connects to WIFI. Run `sudo raspi-config` to set up WIFI again.
