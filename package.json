@@ -20,6 +20,7 @@
   "homepage": "https://github.com/chuanqisun/rock-talk-rpi#readme",
   "dependencies": {
     "@clack/prompts": "^1.3.0",
+    "music-metadata": "^11.12.3",
     "rxjs": "^7.8.2"
   },
   "optionalDependencies": {

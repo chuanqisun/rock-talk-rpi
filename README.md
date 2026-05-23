@@ -108,8 +108,7 @@ git clone https://github.com/chuanqisun/rocktalk-pi.git
 cd rocktalk-pi
 
 #  setup node dependencies
-npm init -y
-npm install spi-device rxjs @clack/prompts music-metadata --no-save
+npm install
 ```
 
 ### 7. Auto startup
