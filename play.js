@@ -203,10 +203,11 @@ async function handlePlaybackEvent(audioPlayer, ledController, event) {
   console.log(`[event] ${JSON.stringify(event)}`);
 
   if (event.type === "start") {
+    const ledModePromise = ledController.setMode("playing");
     const didStart = await audioPlayer.play(event.track);
 
     if (didStart) {
-      await ledController.setMode("playing");
+      await ledModePromise;
       return;
     }
 
@@ -246,6 +247,8 @@ async function main() {
     loop: true,
   });
   const ledController = new LedController();
+
+  void ledController.warmup();
 
   process.on("SIGINT", () => {
     console.log("\nExiting...");
