@@ -129,3 +129,4 @@ sudo systemctl start rocktalk.service
 ## Troubleshoot
 
 1. The device no longer auto-connects to WIFI. Run `sudo raspi-config` to set up WIFI again.
+2. Power LED turns red. Power off the device and power on again. You may need to unplug USB devices during the reboot.
