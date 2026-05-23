@@ -75,7 +75,7 @@ sudo reboot
 ### 3. Install packages
 
 ```sh
-sudo apt install mpg123 music-metadata # for playing mp3 audio
+sudo apt install mpg123  # for playing mp3 audio
 ```
 
 ### 4. Test hardware
@@ -109,7 +109,7 @@ cd rocktalk-pi
 
 #  setup node dependencies
 npm init -y
-npm install spi-device rxjs @clack/prompts --no-save
+npm install spi-device rxjs @clack/prompts music-metadata --no-save
 ```
 
 ### 7. Auto startup
