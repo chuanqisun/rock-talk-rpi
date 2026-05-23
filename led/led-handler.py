@@ -9,8 +9,10 @@ import board
 from adafruit_led_animation.animation.rainbowchase import RainbowChase
 from adafruit_raspberry_pi5_neopixel_write import neopixel_write
 
+
 NEOPIXEL = board.D13 # We use GPIO13 for data line. This may be customizable.
 num_pixels = 30 # Adjusted for actual number of LEDs
+brightness = 0.5 # Adjust brightness as needed (0.0 to 1.0)
 GREEN = (0, 0, 255)
 OFF = (0, 0, 0)
 SUPPORTED_MODES = {"idle", "playing"}
@@ -132,7 +134,13 @@ def handle_command(command, current_mode):
 
     raise ValueError(f"Unsupported command: {command_type}")
 
-pixels = Pi5Pixelbuf(NEOPIXEL, num_pixels, auto_write=True, byteorder="BGR")
+pixels = Pi5Pixelbuf(
+    NEOPIXEL,
+    num_pixels,
+    auto_write=True,
+    byteorder="BGR",
+    brightness=brightness,
+)
 startup_animation = RainbowChase(pixels, speed=0.02, size=5, spacing=3)
 running = True
 playback_state = None
