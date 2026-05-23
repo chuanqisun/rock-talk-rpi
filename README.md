@@ -1,7 +1,7 @@
 # RockTalk Operator Manual
 
 > [!WARNING]
-> Leaving the USB audio device plugged-in while rebooting will cause crash.
+> Leaving the USB audio device plugged-in while rebooting may cause crash.
 
 > [!WARNING]
 > Leaving RFID chip on the reader while rebooting may cause crash.
