@@ -128,7 +128,7 @@ sudo systemctl start rocktalk.service
 
 > [!TIP]
 > You may leave additional LED strip untrimmed and use the software to control how many pixels are lit up.
-> You need to update the number of pixels in `led/led-handler.py` after you complete the physical setup.
+> You need to update the `num_pixels` parameter in `led/led-handler.py` after you complete the physical setup.
 
 ### 1. Install pip
 
