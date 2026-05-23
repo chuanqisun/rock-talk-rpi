@@ -14,6 +14,7 @@ GREEN = (0, 0, 255)
 OFF = (0, 0, 0)
 SUPPORTED_MODES = {"idle", "playing"}
 FRAME_INTERVAL_SECONDS = 0.05
+FADE_OUT_DURATION_SECONDS = 0.35
 
 class Pi5Pixelbuf(adafruit_pixelbuf.PixelBuf):
     def __init__(self, pin, size, **kwargs):
@@ -36,6 +37,19 @@ def clear_pixels():
 
 def fill_pixels(color):
     pixels.fill(color)
+    pixels.show()
+
+
+def snapshot_pixels():
+    return [tuple(pixels[index]) for index in range(num_pixels)]
+
+
+def render_fade_out(source_colors, progress):
+    brightness = max(0.0, min(1.0 - progress, 1.0))
+
+    for index, color in enumerate(source_colors):
+        pixels[index] = tuple(int(channel * brightness) for channel in color)
+
     pixels.show()
 
 
@@ -66,7 +80,7 @@ def render_mode(mode):
 
 
 def handle_command(command, current_mode):
-    global playback_state
+    global fade_state, playback_state, shutdown_pending
     command_type = command.get("type")
 
     if command_type == "setMode":
@@ -75,10 +89,19 @@ def handle_command(command, current_mode):
         if mode not in SUPPORTED_MODES:
             raise ValueError(f"Unsupported LED mode: {mode}")
 
-        if mode != current_mode:
-            render_mode(mode)
-
         playback_state = None
+        shutdown_pending = False
+
+        if mode == "idle":
+            fade_state = {
+                "source_colors": snapshot_pixels(),
+                "started_at": time.monotonic(),
+            }
+        else:
+            fade_state = None
+
+            if mode != current_mode:
+                render_mode(mode)
 
         emit({"type": "ack", "command": "setMode", "mode": mode})
         return mode, False
@@ -98,6 +121,8 @@ def handle_command(command, current_mode):
             "intro_delay_ms": intro_delay_ms,
             "started_at": time.monotonic(),
         }
+        fade_state = None
+        shutdown_pending = False
         fill_pixels(GREEN)
 
         emit({
@@ -110,9 +135,13 @@ def handle_command(command, current_mode):
 
     if command_type == "shutdown":
         playback_state = None
-        clear_pixels()
+        fade_state = {
+            "source_colors": snapshot_pixels(),
+            "started_at": time.monotonic(),
+        }
+        shutdown_pending = True
         emit({"type": "ack", "command": "shutdown"})
-        return current_mode, True
+        return current_mode, False
 
     if command_type == "ping":
         emit({"type": "pong"})
@@ -122,7 +151,9 @@ def handle_command(command, current_mode):
 
 pixels = Pi5Pixelbuf(NEOPIXEL, num_pixels, auto_write=True, byteorder="BGR")
 running = True
+fade_state = None
 playback_state = None
+shutdown_pending = False
 
 
 def stop_worker(_signal_number, _frame):
@@ -153,6 +184,17 @@ try:
                     cycle_elapsed_ms = (elapsed_ms - playback_state["intro_delay_ms"]) % progress_duration_ms
 
                 render_progress(cycle_elapsed_ms, progress_duration_ms)
+        elif fade_state is not None:
+            fade_progress = (time.monotonic() - fade_state["started_at"]) / FADE_OUT_DURATION_SECONDS
+
+            if fade_progress >= 1.0:
+                fade_state = None
+                clear_pixels()
+
+                if shutdown_pending:
+                    break
+            else:
+                render_fade_out(fade_state["source_colors"], fade_progress)
 
         ready_inputs, _, _ = select.select([sys.stdin], [], [], FRAME_INTERVAL_SECONDS)
 
