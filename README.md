@@ -124,7 +124,21 @@ sudo systemctl start rocktalk.service
 
 ## NeoPixel setup
 
-- [Documentation](https://learn.adafruit.com/circuitpython-on-raspberrypi-linux/using-neopixels-on-the-pi-5)
+### 1. Install pip
+
+```sh
+sudo apt install python3-pip
+```
+
+### 2. Create virtual environment
+
+```sh
+sudo apt install python3-venv
+python3 -m venv env --system-site-packages
+source env/bin/activate
+```
+
+Follow this [documentation](https://learn.adafruit.com/circuitpython-on-raspberrypi-linux/using-neopixels-on-the-pi-5) to finish the setup
 
 ## Troubleshoot
 
