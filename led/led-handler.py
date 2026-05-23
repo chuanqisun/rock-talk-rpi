@@ -9,7 +9,7 @@ import board
 from adafruit_led_animation.animation.rainbowchase import RainbowChase
 from adafruit_raspberry_pi5_neopixel_write import neopixel_write
 
-NEOPIXEL = board.D13
+NEOPIXEL = board.D13 # We use GPIO13 for data line. This may be customizable.
 num_pixels = 30 # Adjusted for actual number of LEDs
 GREEN = (0, 0, 255)
 OFF = (0, 0, 0)
