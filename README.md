@@ -75,7 +75,7 @@ sudo reboot
 ### 3. Install packages
 
 ```sh
-sudo apt install mpg123 # for playing mp3 audio
+sudo apt install mpg123 music-metadata # for playing mp3 audio
 ```
 
 ### 4. Test hardware

@@ -245,6 +245,7 @@ async function main() {
     baseDir: resolve(__dirname, "tracks"),
     device: selectedDevice,
     loop: true,
+    onPlaybackCycleStart: ({ durationMs }) => ledController.startPlaybackProgress({ durationMs, introDelayMs: 1000 }),
   });
   const ledController = new LedController();
 
