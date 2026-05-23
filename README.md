@@ -126,6 +126,10 @@ sudo systemctl start rocktalk.service
 
 ## NeoPixel setup
 
+> [!TIP]
+> You may leave additional LED strip untrimmed and use the software to control how many pixels are lit up.
+> You need to update the number of pixels in `led/led-handler.py` after you complete the physical setup.
+
 ### 1. Install pip
 
 ```sh
@@ -143,6 +147,12 @@ source env/bin/activate
 Follow this [documentation](https://learn.adafruit.com/circuitpython-on-raspberrypi-linux/using-neopixels-on-the-pi-5) to finish the setup
 
 The Node.js LED launcher will automatically use `env/bin/python3` when the project-level `env` virtual environment exists. If you need to override that, set `ROCKTALK_LED_PYTHON` to the interpreter you want.
+
+### 3. Programming the LEDs.
+
+- The python script in `led/led-handler.py` executes low level commands
+- The `lib/led-controller.js` lays commands from node.js into python
+- The `play.js` script orchestrates high level control of audio/visual effects
 
 ## Troubleshoot
 
