@@ -8,7 +8,7 @@ import board
 from adafruit_raspberry_pi5_neopixel_write import neopixel_write
 
 NEOPIXEL = board.D13
-num_pixels = 60
+num_pixels = 30 # Adjusted for actual number of LEDs
 BLUE = (0, 0, 255)
 OFF = (0, 0, 0)
 SUPPORTED_MODES = {"idle", "playing"}
