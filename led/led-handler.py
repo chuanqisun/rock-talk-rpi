@@ -142,16 +142,17 @@ try:
     while running:
         if playback_state is not None:
             elapsed_ms = int((time.monotonic() - playback_state["started_at"]) * 1000)
+            progress_duration_ms = max(playback_state["duration_ms"] - playback_state["intro_delay_ms"], 0)
 
             if elapsed_ms < playback_state["intro_delay_ms"]:
                 fill_pixels(GREEN)
             else:
                 cycle_elapsed_ms = 0
 
-                if playback_state["duration_ms"] > 0:
-                    cycle_elapsed_ms = (elapsed_ms - playback_state["intro_delay_ms"]) % playback_state["duration_ms"]
+                if progress_duration_ms > 0:
+                    cycle_elapsed_ms = (elapsed_ms - playback_state["intro_delay_ms"]) % progress_duration_ms
 
-                render_progress(cycle_elapsed_ms, playback_state["duration_ms"])
+                render_progress(cycle_elapsed_ms, progress_duration_ms)
 
         ready_inputs, _, _ = select.select([sys.stdin], [], [], FRAME_INTERVAL_SECONDS)
 
